@@ -7,9 +7,10 @@ from app.utils.db.teacher import find_teacher_by_email
 from app.utils.shared.auth import generate_random_password, hash_password, send_password_to_email
 from app.utils.db.teacher import insert_new_teacher
 from app.utils.teacher.class_management import class_exists, all_subject_codes
+from app.utils.db.user import user_added_to_index
 from app.schemas.teacher.auth import Teacher
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/teacher/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def register_teacher(new_teacher: Teacher, background_tasks: BackgroundTasks):
@@ -30,7 +31,10 @@ def register_teacher(new_teacher: Teacher, background_tasks: BackgroundTasks):
     email = new_teacher["email"]
     teacher = find_teacher_by_email(email)
     if teacher:
-        raise HTTPException(status_code=400, detail="teacher already exists.")
+        raise HTTPException(status_code=400, detail="Teacher already exists.")
+    is_added_to_index = user_added_to_index(email, "teacher")
+    if not is_added_to_index:
+        raise HTTPException(status_code=400, detail="Could not add user to index.")
     generated_password = generate_random_password()
     new_teacher["password"] = hash_password(generated_password)
     is_added = insert_new_teacher(new_teacher)
@@ -53,5 +57,4 @@ def get_current_teacher(access_token: str = Depends(oauth2_scheme)):
     if not teacher:
         raise HTTPException(status_code=401, detail="Unauthorized access.")
     teacher["_id"] = str(teacher["_id"])
-    del teacher["password"]
     return teacher

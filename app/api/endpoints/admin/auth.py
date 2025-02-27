@@ -1,10 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Header, status, BackgroundTasks, Form
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from uuid import uuid4
-from typing import Annotated
-from pydantic import BaseModel
-from uuid import uuid4
+from fastapi.security import OAuth2PasswordBearer
 
 from app.utils.admin.auth import register_admin
 from app.schemas.admin.auth import Admin
@@ -15,40 +11,7 @@ from app.utils.db.admin import find_admin_by_email
 
 admin_auth_router = APIRouter(tags=["Authentication"])
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/admin/login")
-
-@admin_auth_router.post("/admin/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    Login admin.
-    """
-    email = form_data.username
-    password = form_data.password
-
-    print(form_data)
-
-    admin = find_admin_by_email(email)
-    if not admin:
-        print("Admin not found")
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
-    
-    print("Admin: ", admin)
-    if not verify_password(password, admin.get("password")):
-        print("Password incorrect")
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
-    
-    session_id = str(uuid4())
-    payload = {
-        "session_id": session_id,
-        "sub": email,
-        "role": "admin"
-    }
-    access_token = generate_access_token(payload)
-    refresh_token = generate_refresh_token(payload)
-    print("Access token is: ", access_token)
-    print("Refresh token is: ", refresh_token)
-    return JSONResponse(content={"access_token": access_token, "refresh_token": refresh_token},
-                        status_code=status.HTTP_200_OK)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 @admin_auth_router.post("/admin/logout")
 async def logout(access_token: str = Depends(oauth2_scheme)):

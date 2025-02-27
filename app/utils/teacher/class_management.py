@@ -6,6 +6,7 @@ from app.utils.db.school_config import find_stream_by_name, find_form_by_level
 from app.utils.db.school_config import find_subject_by_code, find_all_subjects
 from app.utils.db.counter import get_next_admission_number
 from app.utils.shared.auth import hash_password
+from app.utils.db.user import user_added_to_index
 from app.schemas.student.profile import Student
 from app.schemas.teacher.auth import Class
 
@@ -58,6 +59,11 @@ def register_student(student: Student, current_teacher: dict):
     student = student.model_dump()
     student["admission_number"] = str(get_next_admission_number())
     student["password"] = hash_password(student["password"])
+
+    is_added_to_index = user_added_to_index(student["admission_number"], "student")
+    if not is_added_to_index:
+        raise HTTPException(status_code=400, detail="Could not add user to index.")
+
     student = add_student(student)
     return student
 

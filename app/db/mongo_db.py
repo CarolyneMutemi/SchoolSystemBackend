@@ -5,6 +5,7 @@ mongo_client = MongoClient('mongodb://localhost:27017/')
 if mongo_client:
     print("Connected to MongoDB")
     db = mongo_client['school']
+    user_index = db["user_index"]
     admins_collection = db['admin']
     students_collection = db['students']
     teachers_collection = db['teachers']

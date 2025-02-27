@@ -8,37 +8,37 @@ from app.utils.shared.auth import validate_token, delete_tokens_from_session
 from app.utils.db.teacher import find_teacher_by_email
 
 teacher_auth_router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/teacher/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-@teacher_auth_router.post("/teacher/login")
-async def login(login_data: OAuth2PasswordRequestForm = Depends()):
-    email = login_data.username
-    password = login_data.password
+# @teacher_auth_router.post("/teacher/login")
+# async def login(login_data: OAuth2PasswordRequestForm = Depends()):
+#     email = login_data.username
+#     password = login_data.password
 
-    print(login_data)
+#     print(login_data)
 
-    teacher = find_teacher_by_email(email)
-    if not teacher:
-        print("Teacher not found")
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
+#     teacher = find_teacher_by_email(email)
+#     if not teacher:
+#         print("Teacher not found")
+#         raise HTTPException(status_code=401, detail="Incorrect email or password")
     
-    print("Teacher: ", teacher)
-    if not verify_password(password, teacher.get("password")):
-        print("Password incorrect")
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
+#     print("Teacher: ", teacher)
+#     if not verify_password(password, teacher.get("password")):
+#         print("Password incorrect")
+#         raise HTTPException(status_code=401, detail="Incorrect email or password")
     
-    session_id = str(uuid4())
-    payload = {
-        "session_id": session_id,
-        "sub": email,
-        "role": "teacher"
-    }
-    access_token = generate_access_token(payload)
-    refresh_token = generate_refresh_token(payload)
-    print("Access token is: ", access_token)
-    print("Refresh token is: ", refresh_token)
-    return JSONResponse(content={"access_token": access_token, "refresh_token": refresh_token},
-                        status_code=status.HTTP_200_OK)
+#     session_id = str(uuid4())
+#     payload = {
+#         "session_id": session_id,
+#         "sub": email,
+#         "role": "teacher"
+#     }
+#     access_token = generate_access_token(payload)
+#     refresh_token = generate_refresh_token(payload)
+#     print("Access token is: ", access_token)
+#     print("Refresh token is: ", refresh_token)
+#     return JSONResponse(content={"access_token": access_token, "refresh_token": refresh_token},
+#                         status_code=status.HTTP_200_OK)
 
 @teacher_auth_router.post("/teacher/logout")
 async def logout(access_token: str = Depends(oauth2_scheme)):

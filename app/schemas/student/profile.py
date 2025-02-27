@@ -27,4 +27,4 @@ class Student(StudentSchema):
 
 class StudentResponse(StudentSchema):
     _id: str
-    admission_number: int
+    admission_number: str

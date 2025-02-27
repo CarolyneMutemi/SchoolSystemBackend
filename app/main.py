@@ -27,6 +27,14 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app with lifespan
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
+
 app.include_router(admin_auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(school_config_router, prefix="/config", tags=["School System Configuration"])
@@ -39,6 +47,3 @@ app.include_router(class_router, prefix="/class", tags=["Class Management"])
 app.include_router(results_router, prefix="/results", tags=["Results Management"])
 app.include_router(student_auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(student_profile_router, prefix="/students", tags=["Profile"])
-
-print(students_collection.find_one({"admission_number": 1001}))
-

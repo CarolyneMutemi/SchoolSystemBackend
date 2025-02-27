@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.utils.shared.auth import validate_token
 from app.utils.db.students import get_student_by_admission_number
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/student/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 def get_current_student(access_token: str = Depends(oauth2_scheme)):
     """
@@ -19,5 +19,4 @@ def get_current_student(access_token: str = Depends(oauth2_scheme)):
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized access.")
     student["_id"] = str(student["_id"])
-    del student["password"]
     return student
