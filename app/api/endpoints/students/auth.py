@@ -1,47 +1,37 @@
-from fastapi import APIRouter, Depends, HTTPException, Header, status, BackgroundTasks, Form
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from uuid import uuid4
-from typing import Annotated
-from pydantic import BaseModel
-from uuid import uuid4
 
-from app.utils.admin.auth import register_admin
-from app.schemas.admin.auth import Admin
 from app.utils.shared.auth import generate_access_token, generate_refresh_token, verify_password
 from app.utils.shared.auth import validate_token, delete_tokens_from_session
-from app.utils.db.admin import find_admin_by_email
+from app.utils.db.students import get_student_by_admission_number
 
+student_auth_router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/student/login")
 
-admin_auth_router = APIRouter(tags=["Authentication"])
+@student_auth_router.post("/student/login")
+async def login(login_data: OAuth2PasswordRequestForm = Depends()):
+    admission_number = login_data.username
+    password = login_data.password
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/admin/login")
+    print(login_data)
 
-@admin_auth_router.post("/admin/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    Login admin.
-    """
-    email = form_data.username
-    password = form_data.password
-
-    print(form_data)
-
-    admin = find_admin_by_email(email)
-    if not admin:
-        print("Admin not found")
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
+    student = get_student_by_admission_number(admission_number)
+    if not student:
+        print("student not found")
+        raise HTTPException(status_code=401, detail="Incorrect admission_number or password")
     
-    print("Admin: ", admin)
-    if not verify_password(password, admin.get("password")):
+    print("student: ", student)
+    if not verify_password(password, student.get("password")):
         print("Password incorrect")
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
+        raise HTTPException(status_code=401, detail="Incorrect admission_number or password")
     
     session_id = str(uuid4())
     payload = {
         "session_id": session_id,
-        "sub": email,
-        "role": "admin"
+        "sub": admission_number,
+        "role": "student"
     }
     access_token = generate_access_token(payload)
     refresh_token = generate_refresh_token(payload)
@@ -50,7 +40,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return JSONResponse(content={"access_token": access_token, "refresh_token": refresh_token},
                         status_code=status.HTTP_200_OK)
 
-@admin_auth_router.post("/admin/logout")
+@student_auth_router.post("/student/logout")
 async def logout(access_token: str = Depends(oauth2_scheme)):
     access_token_payload = validate_token(access_token, "access")
     session_id = access_token_payload.get("session_id")
@@ -60,3 +50,4 @@ async def logout(access_token: str = Depends(oauth2_scheme)):
     if not are_deleted:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not log out.")
     return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Logged out successfully."})
+

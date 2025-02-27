@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 
 
-class NewAdmin(BaseModel):
+class Admin(BaseModel):
     nationalID: str
     phone_number: str
     email: EmailStr
@@ -9,3 +9,7 @@ class NewAdmin(BaseModel):
     last_name: str
     role: str
     enrollment_date: str
+
+
+class NewPassword(BaseModel):
+    password: str

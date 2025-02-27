@@ -8,7 +8,11 @@ from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 import jwt
 from jwt.exceptions import PyJWTError
+
 from app.db.redis_db import redis_client
+from app.utils.db.admin import find_admin_by_email
+from app.utils.db.teacher import find_teacher_by_email
+from app.utils.db.students import get_student_by_admission_number
 
 
 load_dotenv()
@@ -29,6 +33,8 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hashed password."""
+    print("Plain password: ", plain_password)
+    print("Hashed password: ", hashed_password)
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 def send_password_to_email(user_email: str, password: str) -> bool:
@@ -110,8 +116,6 @@ def validate_token(token: str, token_type: str) -> dict:
     """
     Validate token.
     """
-    from app.utils.admin.db import find_admin_by_email
-
     payload = decode_token(token)
     error = payload.get("error")
     if error:
@@ -122,7 +126,6 @@ def validate_token(token: str, token_type: str) -> dict:
     session_id = payload.get("session_id")
     is_right_type = payload.get("token_type") == token_type
     if not is_right_type:
-        print(f"Token type - {token_type} not equal to {payload.get('token_type')}.")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Unauthorized access.")
 
@@ -135,8 +138,14 @@ def validate_token(token: str, token_type: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Unauthorized access.")
 
+    user_role = payload.get("role")
+    find_user = {
+        "admin": find_admin_by_email,
+        "teacher": find_teacher_by_email,
+        "student": get_student_by_admission_number
+    }
     user_email = payload.get("sub")
-    user = find_admin_by_email(user_email)
+    user = find_user[user_role](user_email)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                              detail="Unauthorized access.")
